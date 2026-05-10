@@ -7,12 +7,16 @@ Standardized `/health` endpoint library for MODAFOCA services. Declare your depe
 ## Install
 
 ```bash
-# FastAPI service:
-pip install "git+https://github.com/modafoca/modafoca-healthcheck.git@v0.1.0#egg=modafoca-healthcheck[fastapi]"
-```
+# FastAPI service, no extras needed beyond requests (Supabase + Anthropic checks ship in core):
+pip install "git+https://github.com/modafoca/modafoca-healthcheck.git@v0.2.0#egg=modafoca-healthcheck[fastapi]"
 
-> v0.1.0 ships `http_check` (generic) + the FastAPI router.
-> v0.2.0 will add Supabase, Pinecone, Anthropic, Postgres, Redis checks behind extras.
+# With SDK-backed checks (pick what you need):
+pip install "git+https://github.com/modafoca/modafoca-healthcheck.git@v0.2.0#egg=modafoca-healthcheck[fastapi,pinecone]"
+pip install "git+https://github.com/modafoca/modafoca-healthcheck.git@v0.2.0#egg=modafoca-healthcheck[fastapi,postgres,redis]"
+
+# Everything (FastAPI + Pinecone + Postgres + Redis):
+pip install "git+https://github.com/modafoca/modafoca-healthcheck.git@v0.2.0#egg=modafoca-healthcheck[all]"
+```
 
 ## Quickstart (FastAPI)
 
@@ -97,8 +101,29 @@ Attach the standard `/health` route to a FastAPI app. Returns 200/503 based on `
 | Check | Probes | Args | Extra |
 |---|---|---|---|
 | `http_check` | Generic HTTP GET, expects 2xx/3xx | `url`, `timeout`, `expected_status_codes`, `method` | (none) |
+| `supabase_check` | Supabase REST root `/rest/v1/` (catches paused projects) | `url`, `key`, `timeout` | (none — pure HTTP) |
+| `anthropic_check` | Anthropic `/v1/models` (free, validates auth + reachability) | `api_key`, `timeout`, `base_url` | (none — pure HTTP) |
+| `pinecone_check` | `pc.Index(name).describe_index_stats()` (v5+ SDK) | `api_key`, `index`, `timeout` | `[pinecone]` |
+| `postgres_check` | `SELECT 1` with `connect_timeout` | `dsn`, `timeout` | `[postgres]` |
+| `redis_check` | `PING` | `url`, `timeout` | `[redis]` |
 
-v0.2.0 will add: `supabase_check`, `pinecone_check`, `anthropic_check`, `postgres_check`, `redis_check`.
+```python
+from modafoca_healthcheck import HealthCheck
+from modafoca_healthcheck.checks import (
+    supabase_check, pinecone_check, anthropic_check,
+    postgres_check, redis_check,
+)
+from modafoca_healthcheck.fastapi import register_health_router
+
+health = HealthCheck(service="rayo", version="1.4.2", cache_ttl=30)
+health.add("supabase", supabase_check(url=SUPABASE_URL, key=SUPABASE_KEY))
+health.add("pinecone", pinecone_check(api_key=PINECONE_KEY, index=PINECONE_INDEX))
+health.add("anthropic", anthropic_check(api_key=ANTHROPIC_KEY))
+
+register_health_router(app, health)
+```
+
+The SDK-backed checks (Pinecone, Postgres, Redis) **lazy-import** their library: `from modafoca_healthcheck.checks import redis_check` always works; calling `redis_check(...)()` without the `[redis]` extra returns `("fail", "redis extra not installed; pip install …")` instead of crashing the import or the endpoint.
 
 ## Writing your own check
 
