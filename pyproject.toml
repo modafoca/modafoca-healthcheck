@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "modafoca-healthcheck"
-version = "0.1.0"
+version = "0.2.0"
 description = "Standardized /health endpoint library for MODAFOCA services. Declares dependencies, probes them in parallel, returns uniform JSON Mission Control reads."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -26,12 +26,19 @@ dependencies = [
 [project.optional-dependencies]
 fastapi = ["fastapi>=0.100"]
 flask = ["flask>=2.3"]  # reserved for v0.3+; not yet implemented
+# Service-specific checks. supabase + anthropic use raw HTTP via the
+# always-installed requests dep, so they don't need an extra. The
+# SDK-backed checks each get their own:
+pinecone = ["pinecone>=5.0"]
+postgres = ["psycopg[binary]>=3.0"]
+redis = ["redis>=5.0"]
+all = ["modafoca-healthcheck[fastapi,pinecone,postgres,redis]"]
 test = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "fastapi>=0.100",
     "httpx>=0.27",  # for fastapi.testclient.TestClient
-    "responses>=0.24",  # for mocking requests in http_check tests
+    "responses>=0.24",  # for mocking requests in http/supabase/anthropic tests
 ]
 
 [project.urls]
