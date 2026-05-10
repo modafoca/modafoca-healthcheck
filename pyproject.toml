@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "modafoca-healthcheck"
+version = "0.1.0"
+description = "Standardized /health endpoint library for MODAFOCA services. Declares dependencies, probes them in parallel, returns uniform JSON Mission Control reads."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "MODAFOCA Studio", email = "ian@modafoca.net"}]
+keywords = ["health-check", "monitoring", "fastapi", "flask", "modafoca"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Monitoring",
+]
+dependencies = [
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+fastapi = ["fastapi>=0.100"]
+flask = ["flask>=2.3"]  # reserved for v0.3+; not yet implemented
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "fastapi>=0.100",
+    "httpx>=0.27",  # for fastapi.testclient.TestClient
+    "responses>=0.24",  # for mocking requests in http_check tests
+]
+
+[project.urls]
+Homepage = "https://github.com/modafoca/modafoca-healthcheck"
+Repository = "https://github.com/modafoca/modafoca-healthcheck"
+Issues = "https://github.com/modafoca/modafoca-healthcheck/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["modafoca_healthcheck"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--strict-markers -ra"
